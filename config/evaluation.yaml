@@ -1,0 +1,15 @@
+output_dir_folder: /path/to/output/folder/with/preds/folder
+input_dir_folder: /path/to/data/folder
+
+task_type: classification
+#task_type: regression
+
+#data_name: cropharvest_binary_train
+data_name: cropharvest_multi_train
+#data_name: lfmc_train 
+#data_name: PM25_D3_train
+
+methods_to_plot: null #consider all
+
+set_display: False
+create_plots: True

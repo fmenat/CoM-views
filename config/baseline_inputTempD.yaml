@@ -1,0 +1,54 @@
+output_dir_folder: /path/to/output/folder
+input_dir_folder: /path/to/data/folder
+additional_method_name: -Garnot
+
+data_name: cropharvest_multi_train
+task_type: classification
+
+training: 
+  max_epochs: 3
+  batch_size: 128
+  emb_dim: 128 
+  early_stop_args: 
+    min_delta: 0.01
+    mode: min
+    patience: 5
+    verbose: True
+
+  missing_as_aug: False
+  
+experiment: 
+  runs_seed: [10]
+  kfolds: 10
+  preprocess: 
+    fillnan: False
+    flatten: False
+    form: zscore
+    input_views: ["S2", "S1", "weather", "S2VI", "DEM"]
+      
+view_names: ["S2_S2VI", "S1", "weather", "DEM"]
+args_forward: #only for testing
+  list_testing_views: [
+    [ ["S2_S2VI"], [1.00] ] , #single-view prediction
+    [ ["S1"], [1.00]] , #single-view prediction
+    [ ["S2_S2VI", "S1"], [1.00] ], #two-views prediction: missing static and others
+    [ ["weather", "DEM"], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00] ],  #both S2, and S1
+    [ ["S1","weather", "DEM"], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00]] , #everything except S2 
+    [ ["S2_S2VI","weather", "DEM"] , [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00]] , #everything except S1
+  ]
+  batch_size: 64
+
+architecture:
+  encoders: 
+    model_type: tempcnn
+    dropout: 0.2
+    kernel_size: 5 
+    layer_size: 128 
+    n_layers: 2 
+    seq_len: 12
+    temp_dropout: 0.3 #main parameter of method
+  predictive_model:
+    n_layers: 1
+    layer_size: 128
+    dropout: 0.2
+    batchnorm: True
