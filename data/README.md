@@ -36,5 +36,5 @@ python data_pm25.py -d DIRECTORY_RAW_DATA -o OUTPUT_DIR -D 3
 ---
 
 
-[!TIP]  
-Preprocessed data can be accessed at: [Link](https://cloud.dfki.de/owncloud/index.php/s/yxAfArTXkMF7nM2)
+> [!TIP] 
+> Preprocessed data can be accessed at: [Link](https://cloud.dfki.de/owncloud/index.php/s/yxAfArTXkMF7nM2)
