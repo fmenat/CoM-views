@@ -1,7 +1,7 @@
 import numpy as np
 
 from .metric_predictions import OverallAccuracy,F1Score,Precision,Recall,Kappa, ConfusionMatrix,AverageAccuracy,ROC_AUC
-from .metric_predictions import R2Score, MAPE, RMSE, MAE, BIAS, rRMSE,MedAE,D2score,TweediePoisson
+from .metric_predictions import R2Score, MAPE, RMSE, MAE, BIAS, rRMSE,MedAE,D2score,TweediePoisson, PCorr
 from .metric_predictions import get_n_data, get_n_true, get_n_pred
 from .metric_predictions import CatEntropy,LogP,P_max, P_true
 from .metric_robustness import DeformanceRobustnessScore, PerformanceRobustnessScore, ClassesUnChanged, SpreadScore, DeformationScore
@@ -119,7 +119,7 @@ class SoftClassificationMetrics(BaseMetrics):
 
 
 class RegressionMetrics(BaseMetrics):
-    def __init__(self, metric_types=["R2","RMSE", "rRMSE", "MAE", "MedAE", "MAPE", "BIAS"]): 
+    def __init__(self, metric_types=["R2","RMSE", "rRMSE", "MAE", "MedAE", "MAPE", "BIAS", "PCorr"]): 
         """build RegressionMetrics
 
         Parameters
@@ -148,6 +148,8 @@ class RegressionMetrics(BaseMetrics):
                 self.metric_dict["Tweedie"] = TweediePoisson()
             elif "d2score"==metric:
                 self.metric_dict["D2"] = D2score()
+            elif "pcorr" == metric:
+                self.metric_dict["PCorr"] = PCorr()
 
 
 #-------------------Robustness Metrics-------------------

@@ -148,3 +148,15 @@ def D2score():
 	def metric(y_pred, y_true):
 		return d2_tweedie_score(y_true, y_pred, power=1)
 	return metric
+
+def PCorr():
+	def metric(y_pred, y_true):
+		y_pred_mean = y_pred.mean()
+		y_pred_std = y_pred.std()
+		y_true_mean = y_true.mean()
+		y_true_std = y_true.std()
+
+		covariance_ = np.mean((y_pred-y_pred_mean)*(y_true-y_true_mean))
+
+		return covariance_/(y_pred_std*y_true_std)
+	return metric
