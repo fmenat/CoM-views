@@ -154,4 +154,4 @@ class TransformerNet(Base_Encoder):
         return {"rep": x[:, 0, :]} # extract class token feature: 
 
     def get_output_size(self):
-        return self.layer_size
+        return self.feature_size

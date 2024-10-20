@@ -1,6 +1,6 @@
 import torch, copy
 
-from .single.encoders import MLP, RNNet
+from .single.encoders import MLP, RNNet, TransformerNet
 from .single.encoders_sota import LTAE, TemporalAttentionEncoder, TempCNN
 from .single.base_encoders import Generic_Encoder
 from .single.base_decoders import Generic_Decoder
@@ -52,6 +52,11 @@ def create_model(input_dims, emb_dims: int, model_type: str = "mlp", n_layers: i
         if "layer_size" in args:
             args["hidden_dims"] = args["layer_size"]
         sub_model = TempCNN( **args)
+        
+    elif model_type == "transformer":
+        args["num_layers"] = n_layers
+        args["len_max_seq"] = args.pop("seq_len") #for positional token
+        sub_model =  TransformerNet(**args)
 
     else:
         raise ValueError(f'Invalid value for model_type: {model_type}. Valid values: ["mlp","cnn","rnn","gru","lstm"]')
