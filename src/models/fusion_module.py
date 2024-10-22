@@ -60,6 +60,7 @@ class FusionModuleMissing(torch.nn.Module):
             self.pooler_function = TransformerNet(feature_size=self.joint_dim, layer_size=self.joint_dim, len_max_seq=self.N_views, **kwargs)
 
         elif self.mode.split("_")[0] in ["sampling"]:
+            self.features = features
             pass 
 
         else:
