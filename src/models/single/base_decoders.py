@@ -30,7 +30,7 @@ class Generic_Decoder(Base_Decoder):
         self.use_norm = use_norm
         self.linear_layer = nn.Linear(self.pre_decoder.get_output_size(), self.out_dims)
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         out_forward = self.pre_decoder(x) #should return a dictionary with output data {"rep": tensor}, or a single tensor
         if type(out_forward) != dict:
             out_forward = {"rep": out_forward}

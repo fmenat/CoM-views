@@ -1,0 +1,84 @@
+output_dir_folder: ./config_time/aux
+input_dir_folder: /home/mena/OneDrive/Publications/data/pixel_all
+
+data_name: cropharvest_multi_train
+task_type: classification
+
+training: 
+  max_epochs: 3
+  batch_size: 128
+  emb_dim: 128 
+  early_stop_args: 
+    min_delta: 0.01
+    mode: min
+    patience: 5
+    verbose: True
+
+  missing_as_aug: True
+  missing_method:
+    name: ignore
+
+experiment: 
+  runs_seed: [30] #repetitions
+  kfolds: 3
+  preprocess: 
+    fillnan: False
+    flatten: False
+    form: zscore
+    input_views: ["S2","S1","weather", "S2VI", "DEM"]
+      
+view_names: ["S2_S2VI","S1","weather","DEM"]
+args_forward: #only for testing
+  list_testing_views: [
+    [ ["S2_S2VI"], [1.00] ] , #single-view prediction
+    [ ["S2_S2VI", "S1"], [1.00] ], #two-views prediction: missing static and others
+    [ ["S1","weather", "DEM"], [1.00]] , #everything except S2 
+    ]
+
+architecture:
+  encoders: 
+    S1:
+      model_type: tempcnn
+      dropout: 0.2
+      kernel_size: 5
+      layer_size: 128 
+      n_layers: 2 
+      seq_len: 12
+      use_norm: True
+    S2_S2VI: 
+      model_type: tempcnn
+      dropout: 0.2
+      kernel_size: 5
+      layer_size: 128 
+      n_layers: 2 
+      seq_len: 12
+      use_norm: True
+    weather: 
+      model_type: tempcnn
+      dropout: 0.2
+      kernel_size: 5
+      layer_size: 128 
+      n_layers: 2 
+      seq_len: 12
+      use_norm: True
+    DEM: 
+      model_type: mlp
+      n_layers: 1
+      layer_size: 128
+      dropout: 0.2
+      batchnorm: False
+      use_norm: True
+  predictive_model:
+    n_layers: 1
+    layer_size: 128
+    dropout: 0.2
+    batchnorm: True
+
+method: #fusion method
+  agg_args:
+    mode: transformer
+    num_heads: 8 
+    num_layers: 1 
+    dropout: 0.4 
+    pos_encoding: True 
+    fixed_pos_encoding: False 

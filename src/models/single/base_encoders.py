@@ -49,7 +49,7 @@ class Generic_Encoder(Base_Encoder):
     def activate_return_all(self):
         self.return_all = True
 
-    def forward(self, x):
+    def forward(self, x, **kwargs):
         x = self.tempdrop_layer(x) #apply temporal dropout if available
         out_forward = self.pre_encoder(x) #should return a dictionary with output data {"rep": tensor}, or a single tensor
         if type(out_forward) != dict:

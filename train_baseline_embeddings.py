@@ -8,9 +8,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from sklearn.utils import class_weight
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 from src.training.preprocess import preprocess_views
-from src.training.baseline_pipeline import PoolEnsemble_train
+from src.training.baseline_pipeline import InputFusion_train
 from src.datasets.views_structure import DataViews, load_structure
 from src.datasets.utils import _to_loader
 
@@ -27,27 +28,29 @@ def main_run(config_file):
     kfolds = config_file["experiment"].get("kfolds", 2)
     preprocess_args = config_file["experiment"]["preprocess"]
     BS = config_file["training"]["batch_size"]
-    method_name = "Pool"
-    if config_file["architecture"]["predictive_model"].get("sharing"):
-        method_name += "SensInv"
+    method_name = f"Input"
+    if config_file["training"].get("missing_as_aug"):
+        if config_file["training"].get("missing_method").get("missing_random"):
+            method_name += "-SD"
+        else:
+            method_name += "-MAUG"
     if config_file.get("additional_method_name"):
         method_name += config_file.get("additional_method_name")
-    if config_file["training"].get("early_stop_args"):
-        if config_file["training"].get("early_stop_args").get("min_delta"):
-            config_file["training"]["early_stop_args"]["min_delta"] *= len(view_names)
 
-    data_views_all = load_structure(f"{input_dir_folder}/{data_name}", full_view_flag=config_file.get("full_view_flag", True))
+    try:
+        data_views_all = load_structure(f"{input_dir_folder}/{data_name}_input", full_view_flag=config_file.get("full_view_flag", True))
+    except:
+        data_views_all = load_structure(f"{input_dir_folder}/{data_name}", full_view_flag=config_file.get("full_view_flag", True))
     if "input_views" not in preprocess_args:
         preprocess_args["input_views"] = view_names
     preprocess_views(data_views_all, **preprocess_args)
-
+    
     if "loss_args" not in config_file["training"]: 
         config_file["training"]["loss_args"] = {}
     if config_file.get("task_type", "").lower() == "classification":
         config_file["training"]["loss_args"]["name"] = "ce" if "name" not in config_file["training"]["loss_args"] else config_file["training"]["loss_args"]["name"]
     elif config_file.get("task_type", "").lower() == "regression":
         config_file["training"]["loss_args"]["name"] = "mse" if "name" not in config_file["training"]["loss_args"] else config_file["training"]["loss_args"]["name"]
-    metadata_r = {"epoch_runs":[], "prediction_time_full":[], "training_time":[], "best_score":[]}
     for r,r_seed in enumerate(runs_seed):
         np.random.seed(r_seed)
         indexs_ = data_views_all.get_all_identifiers() 
@@ -67,7 +70,6 @@ def main_run(config_file):
         else: #regular random cross-validation
             np.random.shuffle(indexs_)
             indexs_runs = np.array_split(indexs_, kfolds)
-
         for k in range(kfolds):
             print(f"******************************** Executing model on run {r+1} and kfold {k+1}")
             
@@ -79,61 +81,46 @@ def main_run(config_file):
 
             if config_file.get("task_type", "").lower() == "classification":
                 train_data_target = train_data["target"].astype(int).flatten()
-                print(train_data_target.dtype, train_data_target)
                 config_file["training"]["loss_args"]["weight"]=class_weight.compute_class_weight(class_weight='balanced',classes= np.unique(train_data_target), y=train_data_target)
-                
-            start_aux = time.time()
-            method, trainer = PoolEnsemble_train(train_data, val_data=val_data,run_id=r,fold_id=k, method_name=method_name,  **config_file)
-            metadata_r["training_time"].append(time.time()-start_aux)
-            metadata_r["epoch_runs"].append(trainer.callbacks[0].stopped_epoch)
-            metadata_r["best_score"].append(trainer.callbacks[0].best_score.cpu())
-            print("Training done")
+            
+            config_file["architecture"]["fine_tune"] = False
+            method, trainer = InputFusion_train(train_data, val_data=val_data, run_id=r,fold_id=k,method_name=method_name, **config_file)
+            outputs_tr = method.transform(_to_loader(train_data, batch_size=BS, train=False), out_norm=False)
+            outputs_te = method.transform(_to_loader(val_data, batch_size=BS, train=False), out_norm=False)
+            
+            #train embedding model
+            if config_file.get("task_type", "").lower() == "classification":
+                RF_model = RandomForestClassifier(class_weight="balanced", random_state=42)
+            else:
+                RF_model = RandomForestRegressor(random_state=42)
+            RF_model.fit(outputs_tr["last_layer"], train_data["target"])
 
-            pred_time_Start = time.time()
-            outputs_te = method.transform(_to_loader(val_data, batch_size=BS, train=False), out_norm=(config_file.get("task_type", "").lower() != "regression"))
-            metadata_r["prediction_time_full"].append(time.time()-pred_time_Start)
-    
-            for view_n, values in outputs_te["views:prediction"].items():
-                data_save_te = DataViews([values], identifiers=val_data["identifiers"], view_names=[f"out_run-{r:02d}_fold-{k:02d}"])
-                if view_n != "aggregated":
-                    data_save_te.save(f"{output_dir_folder}/pred/{data_name}/{method_name}_{view_n}", ind_views=True, xarray=False)
-                else:
-                    data_save_te.save(f"{output_dir_folder}/pred/{data_name}/"+method_name.replace("Pool", "EnsemblePool"), ind_views=True, xarray=False)
+            data_save_te = DataViews([RF_model.predict(outputs_te["last_layer"])], identifiers=val_data["identifiers"], view_names=[f"out_run-{r:02d}_fold-{k:02d}"])
+            data_save_te.save(f"{output_dir_folder}/pred/{data_name}/{method_name}", ind_views=True,xarray=False)
             
             if config_file.get("args_forward") and config_file["args_forward"].get("list_testing_views"): 
                 for (test_views, percentages) in config_file["args_forward"].get("list_testing_views"):
                     for perc_missing in percentages:
                         print("Inference with the following views ",test_views, " and percentage missing ",perc_missing)
-                        args_forward = {"inference_views":test_views}
-                            
-                        pred_time_Start = time.time()
-                        outputs_te = method.transform(_to_loader(val_data, batch_size=config_file['args_forward'].get("batch_size", BS), train=False), out_norm=(config_file.get("task_type", "").lower() != "regression"), args_forward=args_forward, perc_forward=perc_missing)
-                        if f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}" not in metadata_r:
-                            metadata_r[f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}"] = []
-                        metadata_r[f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}"].append(time.time()-pred_time_Start)
-
-                        aux_name = "Pool"
-                        if config_file["architecture"]["predictive_model"].get("sharing"):
-                            aux_name += "SensInv"
-                        if config_file.get("additional_method_name"):
-                            aux_name += config_file.get("additional_method_name")
-                        aux_name += "-Forw_" + "_".join(test_views) #common names should be in a util file
+                        if "missing_method" in config_file["args_forward"]:
+                            args_forward = {"inference_views":test_views, **{k:v for k,v in config_file["args_forward"].items() if k!= "list_testing_views"}}
+                        else:
+                            method.set_missing_info(None, **config_file["training"].get("missing_method", {}))
+                            args_forward = {"inference_views":test_views, "missing_method":method.missing_method}
+                        
+                        outputs_te = method.transform(_to_loader(val_data, batch_size=config_file['args_forward'].get("batch_size", BS), train=False), out_norm=(config_file.get("task_type", "").lower() != "regression"), args_forward=args_forward, perc_forward=perc_missing)          
+                        
+                        aux_name = f"Input-Forw_" + "_".join(test_views) #common names should be in a util file
                         if perc_missing != 1 and perc_missing != 0:
                             aux_name += f"_{perc_missing*100:.0f}"
-
-                        for view_n, values in outputs_te["views:prediction"].items():
-                            data_save_te = DataViews([values], identifiers=val_data["identifiers"], view_names=[f"out_run-{r:02d}_fold-{k:02d}"])
-                            if view_n == "aggregated":
-                                data_save_te.save(f"{output_dir_folder}/pred/{data_name}/"+aux_name.replace("Pool", "EnsemblePool"), ind_views=True, xarray=False)
+                        if config_file.get("additional_method_name"):
+                            aux_name += config_file.get("additional_method_name")
+                        data_save_te = DataViews([RF_model.predict(outputs_te["last_layer"])], identifiers=val_data["identifiers"], view_names=[f"out_run-{r:02d}_fold-{k:02d}"])
+                        data_save_te.save(f"{output_dir_folder}/pred/{data_name}/{aux_name}", ind_views=True, xarray=False)
                         print(f"Fold {k+1}/{kfolds} of Run {r+1}/{len(runs_seed)} in {aux_name} finished...")
-
             print(f"Fold {k+1}/{kfolds} of Run {r+1}/{len(runs_seed)} in {method_name} finished...")
-
     Path(f"{output_dir_folder}/metadata/{data_name}/{method_name}").mkdir(parents=True, exist_ok=True)
-    pd.DataFrame(metadata_r).to_csv(f"{output_dir_folder}/metadata/{data_name}/{method_name}/metadata_runs.csv")
-    print("Epochs for %s runs on average for %.2f epochs +- %.3f"%(method_name,np.mean(metadata_r["epoch_runs"]),np.std(metadata_r["epoch_runs"])))
-    print(f"Finished whole execution of {len(runs_seed)} runs in {time.time()-start_time:.2f} secs")
-    return metadata_r
+    print(f"Finished whole execution of {len(runs_seed)} runs in {time.time()-start_time:.2f} secs")    
 
 if __name__ == "__main__":
     arg_parser = argparse.ArgumentParser()
@@ -149,5 +136,5 @@ if __name__ == "__main__":
     args = arg_parser.parse_args()
     with open(args.settings_file) as fd:
         config_file = yaml.load(fd, Loader=yaml.SafeLoader)
-
+    
     main_run(config_file)

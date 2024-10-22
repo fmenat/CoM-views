@@ -326,7 +326,6 @@ class DataViews(object):
                 identifiers : a list of identifiers of the data returned
             
         """        
-        
         if len(view_names) == 0:
             view_names = self.get_view_names()
         view_names = list(dict.fromkeys(view_names))
@@ -337,8 +336,8 @@ class DataViews(object):
                 view_names.extend(v.split("_"))
                 additional_views.append(v)
         if len(additional_views) != 0:
-            view_names = list(set(view_names) - set(additional_views))
-        
+            view_names = [v for v in view_names if v not in additional_views]
+            
         print(f"You select {len(view_names)} views from the {len(self.view_names)} available, you could use get_view_names() to check which are available, the selected views are {view_names}, with additional views {additional_views}")
 
         if self.full_view_flag:

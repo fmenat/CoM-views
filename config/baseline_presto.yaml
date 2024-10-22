@@ -1,0 +1,59 @@
+output_dir_folder: /home/mena/OneDrive/Publications/missing_aug/baseline
+input_dir_folder: /home/mena/OneDrive/Publications/data/pixel_all
+additional_method_name: -Presto
+
+data_name: cropharvest_multi_train
+task_type: classification
+
+training: 
+  max_epochs: 3
+  batch_size: 128
+  emb_dim: 128 
+  early_stop_args: 
+    min_delta: 0.01
+    mode: min
+    patience: 5
+    verbose: True
+
+  missing_as_aug: True
+  missing_method:
+    name: impute
+    where: input
+    value_fill: 0.0
+    missing_random: True
+
+  
+experiment: 
+  runs_seed: [10] 
+  kfolds: 10
+  preprocess: 
+    fillnan: False
+    flatten: False
+    form: zscore
+    input_views: ["S2", "S1", "weather", "S2VI", "DEM"]
+      
+view_names: ["S2_S2VI", "S1", "weather", "DEM"]
+args_forward: #only for testing
+  list_testing_views: [
+    [ ["S2_S2VI"], [1.00] ] , #single-view prediction
+    [ ["S1"], [1.00]] , #single-view prediction
+    [ ["S2_S2VI", "S1"], [1.00] ], #two-views prediction: missing static and others
+    [ ["weather", "DEM"], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00] ],  #both S2, and S1
+    [ ["S1","weather", "DEM"], [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00]] , #everything except S2 
+    [ ["S2_S2VI","weather", "DEM"] , [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.00]] , #everything except S1
+  ]
+  batch_size: 64
+
+architecture:
+  presto: True
+  view_bands_order:
+    s1: [0,1]
+    s1_bands: ["VV", "VH"]
+    era5: [2,3]
+    era5_bands: ['temperature_2m',  'total_precipitation']
+    srtm: [4,5]
+    srtm_bands: ['elevation','slope']
+    s2: [6,7,8,9,10,11,12,13,14,15,16,17]
+    s2_bands: ['B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B8A', 'B9', 'B11', 'B12', "NDVI"] 
+
+  latlons: [-7.24, 31.98]  #mean coordenates of the dataset

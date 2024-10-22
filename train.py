@@ -41,7 +41,7 @@ def main_run(config_file):
         config_file["training"]["loss_args"]["name"] = "mse" if "name" not in config_file["training"]["loss_args"] else config_file["training"]["loss_args"]["name"]
     method_name = assign_multifusion_name(config_file["training"],config_file["method"], more_info_str=config_file.get("additional_method_name", ""))
 
-    metadata_r = {"epoch_runs":[], "full_prediction_time":[], "training_time":[], "best_score":[] }
+    metadata_r = {"epoch_runs":[], "prediction_time_full":[], "training_time":[], "best_score":[] }
     for r,r_seed in enumerate(runs_seed):
         np.random.seed(r_seed)
         indexs_ = data_views_all.get_all_identifiers() 
@@ -85,7 +85,7 @@ def main_run(config_file):
             #---------- Store predictions of the model -----------#
             pred_time_Start = time.time()
             outputs_te = method.transform(_to_loader(val_data, batch_size=BS, train=False), out_norm=(config_file.get("task_type", "").lower() != "regression"))            
-            metadata_r["full_prediction_time"].append(time.time()-pred_time_Start)
+            metadata_r["prediction_time_full"].append(time.time()-pred_time_Start)
             data_save_te = DataViews([outputs_te["prediction"]], identifiers=val_data["identifiers"], view_names=[f"out_run-{r:02d}_fold-{k:02d}"])
             data_save_te.save(f"{output_dir_folder}/pred/{data_name}/{method_name}", ind_views=True, xarray=False)
                 
@@ -102,9 +102,9 @@ def main_run(config_file):
                             
                         pred_time_Start = time.time()
                         outputs_te = method.transform(_to_loader(val_data, batch_size=config_file['args_forward'].get("batch_size", BS), train=False), out_norm=(config_file.get("task_type", "").lower() != "regression"), args_forward=args_forward, perc_forward=perc_missing)
-                        if f"{'_'.join(test_views)}_{perc_missing*100:.0f}_prediction_time" not in metadata_r:
-                            metadata_r[f"{'_'.join(test_views)}_{perc_missing*100:.0f}_prediction_time"] = []
-                        metadata_r[f"{'_'.join(test_views)}_{perc_missing*100:.0f}_prediction_time"].append(time.time()-pred_time_Start)
+                        if f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}" not in metadata_r:
+                            metadata_r[f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}"] = []
+                        metadata_r[f"prediction_time_{'_'.join(test_views)}_{perc_missing*100:.0f}"].append(time.time()-pred_time_Start)
 
                         aux_name = assign_multifusion_name(config_file["training"],config_file["method"], forward_views=test_views, perc=perc_missing, 
                                                         more_info_str=config_file.get("additional_method_name", ""))
@@ -118,6 +118,7 @@ def main_run(config_file):
     pd.DataFrame(metadata_r).to_csv(f"{output_dir_folder}/metadata/{data_name}/{method_name}/metadata_runs.csv")
     print("Epochs for %s runs on average for %.2f epochs +- %.3f"%(method_name,np.mean(metadata_r["epoch_runs"]),np.std(metadata_r["epoch_runs"])))
     print(f"Finished whole execution of {len(runs_seed)} runs in {time.time()-start_time:.2f} secs")
+    return metadata_r
 
 
 if __name__ == "__main__":
