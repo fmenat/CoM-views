@@ -10,12 +10,6 @@ from src.models.fusion_strategy import InputFusion, SingleViewPool
 from src.training.pl_utils import prepare_callback
 from src.models.nn_models import create_awareness_vectors
 
-try:
-    from src.models.presto_model import Presto_adapted
-except:
-    print("Presto model not available")
-
-
 def InputFusion_train(train_data: dict, val_data = None,
                 data_name="", method_name="", run_id=0, fold_id=0, output_dir_folder="", 
                 training={}, architecture= {}, **kwargs):
@@ -35,17 +29,12 @@ def InputFusion_train(train_data: dict, val_data = None,
     args_model = {"input_dim_to_stack": feats_dims, "loss_args": loss_args, **training.get("additional_args", {})}
     
     #Components Definition - Encoder and Predictive model
-    if architecture.get("presto", False):  
-        full_model = Presto_adapted(fine_tune=architecture.get("fine_tune",True), view_bands_order = architecture.get("view_bands_order"), latlons = architecture.get("latlons"), num_outputs = n_labels)
-    else:
-        encoder_model = create_model(np.sum(feats_dims), emb_dim, **architecture["encoders"])
-        predictive_model = create_model(emb_dim, n_labels, **architecture["predictive_model"], encoder=False) 
-        full_model = torch.nn.Sequential(encoder_model, predictive_model)
+    encoder_model = create_model(np.sum(feats_dims), emb_dim, **architecture["encoders"])
+    predictive_model = create_model(emb_dim, n_labels, **architecture["predictive_model"], encoder=False) 
+    full_model = torch.nn.Sequential(encoder_model, predictive_model)
     
     #Full-model Definition
     model = InputFusion(predictive_model=full_model, view_names=train_data["view_names"], **args_model)
-    if architecture.get("presto", False) and not architecture.get("fine_tune",True):
-        return model, None
     print("Initial parameters of model:", model.hparams_initial)
     if "missing_as_aug" in training: 
         model.set_missing_info(aug_status=training["missing_as_aug"], **training.get("missing_method", {}))

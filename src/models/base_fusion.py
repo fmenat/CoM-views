@@ -125,11 +125,11 @@ class MVFusionMissing(_BaseViewsLightning):
         out_z_e = self.fusion_module(views_data, views_available=views_available_ohv.bool())
         
         #prediction head
-        out_y = self.prediction_head(out_z_e["joint_rep"], inference_views) #inference_views only for Presto
+        out_y = self.prediction_head(out_z_e["joint_rep"])
         return_dic = {"prediction": self.apply_softmax(out_y) if out_norm else out_y }
         if intermediate:
             return_dic["last_layer"] = out_y
-            return dict( **return_dic, **out_z_e) #**out_zs_views
+            return dict( **return_dic, **out_z_e)
         else:
             return return_dic
 
