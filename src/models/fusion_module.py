@@ -1,4 +1,5 @@
 import torch
+from torch import nn
 import numpy as np
 import itertools
 from typing import List, Dict
@@ -7,13 +8,12 @@ from .nn_models import create_model
 from .single.encoders import RNNet,TransformerNet
 from .single.fusion_layers import LinearSum_,UniformSum_,Product_,Maximum_,Stacking_,Concatenate_, STACK_FUNC_NAMES, POOL_FUNC_NAMES
 
-class FusionModuleMissing(torch.nn.Module):
+class FusionModuleMissing(nn.Module):
     def __init__(self, 
                  emb_dims: List[int], 
                  mode: str, 
                  adaptive: bool=False, 
                  features: bool=False, 
-                 activation_fun: str="softmax",
                  pos_encoding: bool = False,
                  permute_rnn: bool = False,
                  random_permute:bool = True,
@@ -68,7 +68,6 @@ class FusionModuleMissing(torch.nn.Module):
 
         if self.adaptive:
             self.features = features
-            self.activation_fun = activation_fun
             out_probs = self.N_views
             forward_input_dim = sum(self.emb_dims) if self.mode in STACK_FUNC_NAMES else self.joint_dim
             forward_output_dim = self.joint_dim*out_probs if self.features else out_probs
@@ -76,11 +75,11 @@ class FusionModuleMissing(torch.nn.Module):
             if "adaptive_args" in kwargs:
                 self.attention_function = create_model(forward_input_dim, forward_output_dim, layer_size=forward_input_dim, **kwargs["adaptive_args"])
             else:
-                self.attention_function = torch.nn.Linear(forward_input_dim, forward_output_dim, bias=True)            
+                self.attention_function = nn.Linear(forward_input_dim, forward_output_dim, bias=True)            
 
         if self.pos_encoding and self.feature_pool:
-            self.pos_encoder = torch.nn.Linear(self.N_views, self.joint_dim, bias=False)
-            self.ohv_basis = torch.nn.functional.one_hot(torch.arange(0,self.N_views), num_classes=self.N_views).float()
+            self.pos_encoder = nn.Linear(self.N_views, self.joint_dim, bias=False)
+            self.ohv_basis = nn.functional.one_hot(torch.arange(0,self.N_views), num_classes=self.N_views).float()
         
     def get_dim_agg(self):
         if self.adaptive or (self.mode.split("_")[0] not in STACK_FUNC_NAMES):
@@ -150,12 +149,12 @@ class FusionModuleMissing(torch.nn.Module):
             if missing_boolean:                  
                 views_available = (views_available[None, :, None]).repeat(att_views.shape[0], 1, att_views.shape[-1])
                 att_views[~views_available] = -torch.inf
-            att_views = torch.nn.Softmax(dim=1)(att_views)
+            att_views = nn.functional.softmax(att_views, dim=1)
 
             joint_emb_views = torch.sum(views_stacked*att_views, dim=1)
 
         if self.mode.split("_")[0] in ["sampling"]:             
-            probabilities = torch.tensor([1]*n_views , dtype=torch.float, device=views_stacked.device)
+            probabilities = torch.ones(len(n_views), dtype=torch.float, device=views_stacked.device)
             if missing_boolean and n_views_available != n_views: 
                 probabilities[~views_available] = 0
             probabilities = probabilities / probabilities.sum()
