@@ -10,7 +10,8 @@ python data_cropharvest.py -d DIRECTORY_RAW_DATA -o OUTPUT_DIR -c CROP_CASE
 * options for CROP_CASE: [binary, multi]
 
 > [!IMPORTANT]  
-> The original data comes from [LFMC from SAR](https://github.com/kkraoj/lfmc_from_sar)
+> The original data comes from [CropHarvest](https://github.com/nasaharvest/cropharvest)
+
 
 ### Live Fuel Moisture Content  
 ```
