@@ -4,7 +4,7 @@ import numpy as np
 from typing import List, Union, Dict
 
 from .utils import stack_all, object_to_list, collate_all_list, detach_all
-from .utils import get_dic_emb_dims, get_loss_by_name, map_encoders 
+from .utils import get_dic_emb_dims, get_loss_by_name, map_encoders
 from .fusion_module import FusionModuleMissing, POOL_FUNC_NAMES
 from .core_fusion import _BaseViewsLightning
 from .missing_utils import possible_missing_mask, augment_all_missing, augment_random_missing
@@ -19,11 +19,11 @@ class MVFusionMissing(_BaseViewsLightning):
             view_encoders has to have get_output_size() method
     """
     def __init__(self,
-                 view_encoders: Union[List[nn.Module],Dict[str,nn.Module]], 
+                 view_encoders: Union[List[nn.Module],Dict[str,nn.Module]],
                  fusion_module: nn.Module,
                  prediction_head: nn.Module,
                  loss_args: dict ={},
-                 view_names: List[str] = [], 
+                 view_names: List[str] = [],
                  **kwargs,
                  ):
         super(MVFusionMissing, self).__init__(**kwargs)
@@ -46,16 +46,16 @@ class MVFusionMissing(_BaseViewsLightning):
         self.N_views = len(self.view_names)
         self.criteria = loss_args["function"] if "function" in loss_args else get_loss_by_name(**self.hparams_initial.loss_args)
         self.missing_as_aug = False
-            
+
     def set_missing_info(self, aug_status, name:str="impute", where:str ="", value_fill=None, missing_random: bool=False, random_perc = 0,**kwargs):
         #set the status of the missing as augmentation technique used during training
         self.missing_as_aug = aug_status
         if name =="impute": #for case of impute
             where = "input" if where == "" else where #default value: input
-            value_fill = 0.0 if type(value_fill) == type(None) else value_fill 
+            value_fill = 0.0 if type(value_fill) == type(None) else value_fill
         elif name == "adapt": #for case of adapt
             where = "feature" if where =="" else where #default value: input
-            value_fill = torch.nan if type(value_fill) == type(None) else value_fill 
+            value_fill = torch.nan if type(value_fill) == type(None) else value_fill
         elif name == "ignore": #completly ignore/drop missing data
             pass
         self.missing_method = {"name": name, "where": where, "value_fill": value_fill}
@@ -66,7 +66,7 @@ class MVFusionMissing(_BaseViewsLightning):
         #baseline setting
         self.missing_random = missing_random
         self.random_perc = random_perc
-        
+
     def forward_encoders(self,
             views: Dict[str, torch.Tensor],
             inference_views: list = [],
@@ -78,23 +78,23 @@ class MVFusionMissing(_BaseViewsLightning):
 
         zs_views = {}
         for v_name in self.view_names:
-            forward_f = True  #Flag to activate view-forward 
+            forward_f = True  #Flag to activate view-forward
             if v_name in inference_views and v_name in views:
                 data_forward = views[v_name]
 
-            else: 
+            else:
                 if missing_method.get("where") == "input": #for ablation -- fill when view not in testing forward or view is missing
-                    data_forward = torch.ones_like(views[v_name])*missing_method["value_fill"] 
+                    data_forward = torch.ones_like(views[v_name])*missing_method["value_fill"]
 
                 elif missing_method.get("where") == "feature": #for ablation -- avoid forward and fill at feature
                     forward_f = False
                     value_fill = torch.nan if missing_method["value_fill"] == "nan" else missing_method["value_fill"]
-                    zs_views[v_name] = torch.ones(self.views_encoder[v_name].get_output_size(), 
+                    zs_views[v_name] = torch.ones(self.views_encoder[v_name].get_output_size(),
                                                   device=self.device).repeat(list(views.values())[0].shape[0], 1)*value_fill
-                
+
                 elif missing_method.get("name") == "ignore":  #default
                     forward_f=False
-                    
+
                 else:
                     raise Exception("Inference with few number of views (missing) but no missing method *where* was indicated in the arguments")
 
@@ -107,23 +107,23 @@ class MVFusionMissing(_BaseViewsLightning):
             intermediate:bool = False,
             out_norm:bool=False,
             inference_views: list = [],
-            missing_method: dict = {}, 
-            forward_from_representation: bool = False, 
+            missing_method: dict = {},
+            forward_from_representation: bool = False,
             ) -> Dict[str, torch.Tensor]:
-        #encoders        
+        #encoders
         if forward_from_representation:
             out_zs_views = {"views:rep": (views if "views:rep" not in views else views["views:rep"])}
         else:
-            out_zs_views = self.forward_encoders(views, inference_views=inference_views, missing_method=missing_method) 
-        
+            out_zs_views = self.forward_encoders(views, inference_views=inference_views, missing_method=missing_method)
+
         #merge function
-        if len(inference_views) != 0 and missing_method.get("name") == "ignore": 
-            views_data = [ out_zs_views["views:rep"][v] for v in self.view_names if v in inference_views] 
+        if len(inference_views) != 0 and missing_method.get("name") == "ignore":
+            views_data = [ out_zs_views["views:rep"][v] for v in self.view_names if v in inference_views]
         else: #adapt, impute or others
             views_data = [ out_zs_views["views:rep"][v] for v in self.view_names] # this ensures that the same views are passed for training
         views_available_ohv = torch.ones(self.N_views) if len(inference_views) == 0 else torch.Tensor([1 if v in inference_views else 0 for v in self.view_names])
         out_z_e = self.fusion_module(views_data, views_available=views_available_ohv.bool())
-        
+
         #prediction head
         out_y = self.prediction_head(out_z_e["joint_rep"])
         return_dic = {"prediction": self.apply_softmax(out_y) if out_norm else out_y }
@@ -147,7 +147,7 @@ class MVFusionMissing(_BaseViewsLightning):
             views_dict = views_data
         else:
             raise Exception("views in batch should be a List or Dict")
-        
+
         if return_target:
             if type(self.criteria) == torch.nn.CrossEntropyLoss:
                 views_target = torch.squeeze(views_target)
@@ -171,36 +171,36 @@ class MVFusionMissing(_BaseViewsLightning):
                 views_targets = []
                 for i, inference_views in enumerate(self.all_missing_views):
                     if self.missing_method.get("name") == "ignore": #default
-                        aux_zs_views = {k: v for k,v in zs_views.items()} 
-                    else: 
-                        value_fill = torch.nan if self.missing_method["value_fill"] == "nan" else self.missing_method["value_fill"] 
+                        aux_zs_views = {k: v for k,v in zs_views.items()}
+                    else:
+                        value_fill = torch.nan if self.missing_method["value_fill"] == "nan" else self.missing_method["value_fill"]
                         aux_zs_views = {k: (v if k in inference_views else torch.ones_like(v)*value_fill) for k, v in zs_views.items()}
-                        
+
                     out_dic_ = self(aux_zs_views, inference_views=inference_views, missing_method=self.missing_method, forward_from_representation = True)
-                    
+
                     if i == 0:
-                        out_dic = object_to_list(out_dic_) 
+                        out_dic = object_to_list(out_dic_)
                     else:
                         collate_all_list(out_dic, out_dic_)
                     views_targets.append(views_target)
                 out_dic = stack_all(out_dic, data_type="torch")
                 views_targets = torch.concat(views_targets, axis = 0)
-        else: 
-            out_dic = self(views_dict) 
+        else:
+            out_dic = self(views_dict)
             views_targets = views_target
 
         if self.hparams_initial.get("focus_full_view") and (len(views_target) != len(views_targets)): #for baseline
             return_dic =  {"objective": self.criteria(out_dic["prediction"][:len(views_target)], views_target) +
                     self.criteria(out_dic["prediction"][len(views_target):], views_targets[len(views_target):])}
-        
+
         else: #default
             return_dic = {"objective": self.criteria(out_dic["prediction"], views_targets)}
 
         if self.missing_as_aug and self.training and not self.missing_random: #multiple missing views cases
             return_dic["fullview"] =  self.criteria(out_dic["prediction"][:len(views_target)], views_target)
             return_dic["missingview"] =  self.criteria(out_dic["prediction"][len(views_target):], views_targets[len(views_target):])
-        return return_dic    
-            
+        return return_dic
+
     def transform(self,
             loader: torch.utils.data.DataLoader,
             intermediate=True,
@@ -221,8 +221,8 @@ class MVFusionMissing(_BaseViewsLightning):
         device = ("cuda" if torch.cuda.is_available() else "cpu") if device == "" else device
         device_used = torch.device(device)
 
-        missing_forward = True 
-        self.eval() 
+        missing_forward = True
+        self.eval()
         self.to(device_used)
         with torch.no_grad():
             for batch_idx, batch in enumerate(loader):
@@ -230,10 +230,10 @@ class MVFusionMissing(_BaseViewsLightning):
                 for view_name in views_dict:
                     views_dict[view_name] = views_dict[view_name].to(device_used)
 
-                if perc_forward != 1 and perc_forward !=0: 
-                    if np.random.rand() > perc_forward: 
+                if perc_forward != 1 and perc_forward !=0:
+                    if np.random.rand() > perc_forward:
                         missing_forward = False
-                    
+
                 if missing_forward:
                     outputs_ = self(views_dict, intermediate=intermediate, out_norm=out_norm, **args_forward)
                 else:
@@ -242,7 +242,7 @@ class MVFusionMissing(_BaseViewsLightning):
 
                 outputs_ = detach_all(outputs_)
                 if batch_idx == 0:
-                    outputs = object_to_list(outputs_) 
+                    outputs = object_to_list(outputs_)
                 else:
                     collate_all_list(outputs, outputs_)
         self.train()
@@ -264,16 +264,16 @@ class SVPool(MVFusionMissing):
                  **kwargs,
                  ):
         super(SVPool, self).__init__(view_encoders, nn.Identity(), nn.Identity(),
-            loss_args=loss_args, view_names=view_names, **kwargs)    
-        
+            loss_args=loss_args, view_names=view_names, **kwargs)
+
         self.view_prediction_heads = nn.ModuleDict(view_prediction_heads)
         self.prediction_aggregation = FusionModuleMissing([v.get_output_size() for v in self.view_prediction_heads.values()], mode="avg_ignore") #average by ignoring missing predictions
         self.awareness_vectors = nn.ParameterDict(awareness_vectors)
         self.awareness_merge = awareness_merge
-        
+
     def forward(self, views: Dict[str, torch.Tensor], out_norm=False, inference_views: list = [], **kwargs):
         out_zs_views = self.forward_encoders(views)
-                
+
         out_y_zs = {}
         for v_name in out_zs_views["views:rep"]:
             if len(self.awareness_vectors) != 0:
@@ -285,9 +285,9 @@ class SVPool(MVFusionMissing):
                     out_zs_views["views:rep"][v_name] = torch.concat([out_zs_views["views:rep"][v_name],self.awareness_vectors[v_name][None,:].expand(out_zs_views["views:rep"][v_name].shape[0],-1)],dim=-1)
                 else:
                     raise Exception("Incorrect merge in the awareness vector")
-                
+
             if len(inference_views) != 0 :
-                if v_name in inference_views: 
+                if v_name in inference_views:
                     out_y = self.view_prediction_heads[v_name]( out_zs_views["views:rep"][v_name])
                 else:
                     out_y  = torch.ones(len(out_zs_views["views:rep"][v_name]), self.view_prediction_heads[v_name].get_output_size(), device=self.device)*torch.nan
@@ -295,7 +295,7 @@ class SVPool(MVFusionMissing):
                 out_y = self.view_prediction_heads[v_name]( out_zs_views["views:rep"][v_name])
             out_y_zs[v_name] = self.apply_softmax(out_y) if out_norm else out_y
         out_y_zs["aggregated"] = self.prediction_aggregation(list(out_y_zs.values()), views_available=[])["joint_rep"]
-        
+
         return {"views:prediction": out_y_zs}
 
     def loss_batch(self, batch: dict):
@@ -305,7 +305,7 @@ class SVPool(MVFusionMissing):
 
         loss_dic = { }
         loss_aux = 0
-        for v_name in self.view_names: 
+        for v_name in self.view_names:
             loss_dic["loss"+v_name] = self.criteria(yi_xi[v_name], views_target)
             loss_aux += loss_dic["loss"+v_name]
         return {"objective": loss_aux, **loss_dic}

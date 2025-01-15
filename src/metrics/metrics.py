@@ -1,7 +1,7 @@
 import numpy as np
 
 from .metric_predictions import OverallAccuracy,F1Score,Precision,Recall,Kappa, ConfusionMatrix,AverageAccuracy,ROC_AUC
-from .metric_predictions import R2Score, MAPE, RMSE, MAE, BIAS, rRMSE,MedAE,D2score,TweediePoisson, PCorr
+from .metric_predictions import R2Score, MAPE, RMSE, MAE, BIAS, rRMSE,MedAE,PCorr
 from .metric_predictions import get_n_data, get_n_true, get_n_pred
 from .metric_predictions import CatEntropy,LogP,P_max, P_true
 from .metric_robustness import DeformanceRobustnessScore, PerformanceRobustnessScore, ClassesUnChanged, SpreadScore, DeformationScore
@@ -59,7 +59,7 @@ class BaseMetrics(object):
 
 
 class ClassificationMetrics(BaseMetrics):
-    def __init__(self, metric_types=["OA","AA","KAPPA", "F1 MACRO","P MACRO","ENTROPY","LOGP"]): 
+    def __init__(self, metric_types=["OA","AA","KAPPA", "F1 MACRO","P MACRO","ENTROPY","LOGP"]):
         """build ClassificationMetrics
 
         Parameters
@@ -119,7 +119,7 @@ class SoftClassificationMetrics(BaseMetrics):
 
 
 class RegressionMetrics(BaseMetrics):
-    def __init__(self, metric_types=["R2","RMSE", "rRMSE", "MAE", "MedAE", "MAPE", "BIAS", "PCorr"]): 
+    def __init__(self, metric_types=["R2","RMSE", "rRMSE", "MAE", "MedAE", "MAPE", "BIAS", "PCorr"]):
         """build RegressionMetrics
 
         Parameters
@@ -144,10 +144,6 @@ class RegressionMetrics(BaseMetrics):
                 self.metric_dict["MAPE"] = MAPE()
             elif "bias"==metric:
                 self.metric_dict["BIAS"] = BIAS()
-            elif "tweediepoisson"==metric:
-                self.metric_dict["Tweedie"] = TweediePoisson()
-            elif "d2score"==metric:
-                self.metric_dict["D2"] = D2score()
             elif "pcorr" == metric:
                 self.metric_dict["PCorr"] = PCorr()
 
@@ -185,7 +181,7 @@ class BaseMetrics_3args(object):
             noise_prediction = np.asarray(noise_prediction)
         if not isinstance(ground_truth, np.ndarray):
             ground_truth = np.asarray(ground_truth)
-                  
+
         #forward over all metrics
         return {name: func(real_prediction, noise_prediction, ground_truth) for (name, func) in self.metric_dict.items()}
 
@@ -197,7 +193,7 @@ class BaseMetrics_3args(object):
         list of strings
         """
         return list(self.metric_dict.keys())
-    
+
 
 class RobustnessMetrics(BaseMetrics_3args):
     def __init__(self, metric_types=["PRS", "PRS_diff", "DRS", "DRS_diff", "DS","DS_diff" ,"SS"], task_type=""):
@@ -249,7 +245,7 @@ class RobustnessMetrics(BaseMetrics_3args):
                     self.metric_dict["DS_diff"] = DeformationScore(normalize=False, reduce="none")
                 elif "ss" == metric:
                     self.metric_dict["SS"] = SpreadScore(reduce="none")
-        
+
         if task_type == "classification":
             self.metric_dict["CC"] = ClassesUnChanged(inverse=True)
             self.metric_dict["CCraw"] = ClassesUnChanged(normalize=False, inverse=True)
