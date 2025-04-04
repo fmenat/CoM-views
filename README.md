@@ -1,5 +1,5 @@
-# All Combinations of Missing (CoM) views
-[![paper](https://img.shields.io/badge/arXiv-xxx.xxx-D12424)](https://www.arxiv.org/abs/xxx.xxx) 
+# all Combinations of Missing (CoM) views in Earth observation
+[![paper](https://img.shields.io/badge/arXiv-2501.01132-D12424)](https://www.arxiv.org/abs/2501.01132) 
 
 ![missing views](imgs/missing_views.png)
 
@@ -73,6 +73,11 @@ python train.py -s config/baseline_featureCoM.yaml
 ---
 
 
+# :scroll: Source
+
+* :lock: [Final published version](https://doi.org/not-yet)
+* :unlock: [Arxiv](https://arxiv.org/abs/2501.01132)
+
 # 🖊️ Citation
 
-Nothing yet
+Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*." Accepted at the Neurocomputing journal 2025.
