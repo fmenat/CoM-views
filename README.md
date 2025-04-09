@@ -75,9 +75,19 @@ python train.py -s config/baseline_featureCoM.yaml
 
 # :scroll: Source
 
-* :lock: [Final published version](https://doi.org/not-yet)
+* :unlock: [Final published version](https://doi.org/10.1016/j.neucom.2025.130175)
 * :unlock: [Arxiv](https://arxiv.org/abs/2501.01132)
 
 # 🖊️ Citation
 
-Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*." Accepted at the Neurocomputing journal 2025.
+Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*." Neurocomputing, 2025.
+```bibtex
+@inproceedings{mena2025missing,
+  title = {Missing data as augmentation in the Earth Observation domain: A multi-view learning approach},
+  journal = {Neurocomputing},
+  volume = {638},
+  year = {2025},
+  issn = {0925-2312},
+  doi = {https://doi.org/10.1016/j.neucom.2025.130175},
+  author = {Mena, Francisco and Arenas, Diego and Dengel, Andreas},
+```
