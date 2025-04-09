@@ -14,7 +14,7 @@ from src.datasets.utils import _to_loader
 from src.training.preprocess import preprocess_views
 from src.training.pipeline import MultiFusion_train, assign_multifusion_name
 
-def main_run(config_file):
+def main_run(config_file, just_return_first_model=False):
     start_time = time.time()
     input_dir_folder = config_file["input_dir_folder"]
     output_dir_folder = config_file["output_dir_folder"]
@@ -77,6 +77,8 @@ def main_run(config_file):
             #----------- Training -----------#
             start_aux = time.time()
             method, trainer = MultiFusion_train(train_data, val_data=val_data,run_id=r,fold_id=k,method_name=method_name, **config_file)
+            if just_return_first_model:
+                return method
             metadata_r["training_time"].append(time.time()-start_aux)
             metadata_r["epoch_runs"].append(trainer.callbacks[0].stopped_epoch)
             metadata_r["best_score"].append(trainer.callbacks[0].best_score.cpu())

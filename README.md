@@ -1,7 +1,7 @@
 # all Combinations of Missing (CoM) views in Earth observation
 [![paper](https://img.shields.io/badge/arXiv-2501.01132-D12424)](https://www.arxiv.org/abs/2501.01132) 
 
-![missing views](imgs/missing_views.png)
+![missing views](imgs/com_based_model.png)
 
 Public repository of our work in all Combinations of Missing (CoM) views in multi-view learning models for Earth observation applications.
 
@@ -32,6 +32,7 @@ python train.py -s config/com_memory.yaml
 > Read about the used data in [data folder](./data)
 
 ## Evaluation
+![missing views](imgs/missing_views.png)
 * To evaluate the predictive performance:
 ```
 python evaluate_predictions.py -s config/evaluation.yaml
@@ -82,12 +83,14 @@ python train.py -s config/baseline_featureCoM.yaml
 
 Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*." Neurocomputing, 2025.
 ```bibtex
-@inproceedings{mena2025missing,
+@article{mena2025missing,
   title = {Missing data as augmentation in the Earth Observation domain: A multi-view learning approach},
+  author = {Mena, Francisco and Arenas, Diego and Dengel, Andreas},
   journal = {Neurocomputing},
   volume = {638},
   year = {2025},
   issn = {0925-2312},
   doi = {https://doi.org/10.1016/j.neucom.2025.130175},
-  author = {Mena, Francisco and Arenas, Diego and Dengel, Andreas},
+  publisher={Elsevier},
+}
 ```
