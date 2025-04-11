@@ -32,7 +32,7 @@ python train.py -s config/com_memory.yaml
 > Read about the used data in [data folder](./data)
 
 ## Evaluation
-![missing views](imgs/missing_views.png)
+![missing views](imgs/missing_views.jpg)
 * To evaluate the predictive performance:
 ```
 python evaluate_predictions.py -s config/evaluation.yaml
