@@ -5,7 +5,7 @@
 
 ![missing views](imgs/com_based_model.png)
 
-In the previous image is illustrated our CoM approach in a Multi-view learning model implementing Feature-level fusion. We focus and validate in Earth observation applications.
+The previous image illustrates our **FCoM** approach in a Multi-view learning model implementing Feature-level fusion. We focus on multi-view Earth observation applications, including classification and regression tasks.
 
 ## Training
 We provide config file examples on how to train our model with different dynamic merge functions. The examples are on the CropHarvest data.
