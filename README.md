@@ -1,9 +1,11 @@
-# all Combinations of Missing (CoM) views in Earth observation
+# CoM: all Combinations of Missing views in the Earth observation domain
 [![paper](https://img.shields.io/badge/arXiv-2501.01132-D12424)](https://www.arxiv.org/abs/2501.01132) 
+
+> Public repository of our work "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*"
 
 ![missing views](imgs/com_based_model.png)
 
-Public repository of our work in all Combinations of Missing (CoM) views in multi-view learning models for Earth observation applications.
+In the previous image is illustrated our CoM approach in a Multi-view learning model implementing Feature-level fusion. We focus and validate in Earth observation applications.
 
 ## Training
 We provide config file examples on how to train our model with different dynamic merge functions. The examples are on the CropHarvest data.
