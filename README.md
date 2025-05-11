@@ -1,7 +1,9 @@
 # CoM: all Combinations of Missing views in the Earth observation domain
 [![paper](https://img.shields.io/badge/arXiv-2501.01132-D12424)](https://www.arxiv.org/abs/2501.01132) 
+[![DOI:10.1016/j.neucom.2025.130175)](http://img.shields.io/badge/DOI-10.1016/j.neucom.2025.130175-blue.svg)](https://doi.org/10.1016/j.neucom.2025.130175)
 
-> Public repository of our work "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*"
+> Public repository of our work [*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*](https://doi.org/10.1016/j.neucom.2025.130175)
+---
 
 ![missing views](imgs/com_based_model.png)
 
@@ -76,11 +78,6 @@ python train.py -s config/baseline_featureCoM.yaml
 ---
 
 
-# :scroll: Source
-
-* :unlock: [Final published version](https://doi.org/10.1016/j.neucom.2025.130175)
-* :unlock: [Arxiv](https://arxiv.org/abs/2501.01132)
-
 # 🖊️ Citation
 
 Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation Domain: A Multi-View Learning Approach*." Neurocomputing, 2025.
@@ -92,7 +89,7 @@ Mena, Francisco, et al. "*Missing Data as Augmentation in the Earth Observation 
   volume = {638},
   year = {2025},
   issn = {0925-2312},
-  doi = {https://doi.org/10.1016/j.neucom.2025.130175},
+  doi = {10.1016/j.neucom.2025.130175},
   publisher={Elsevier},
 }
 ```
